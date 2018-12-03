@@ -2,16 +2,17 @@ Shader "TessSphere"
 {
 	Properties
 	{
+		// Properties accessible and editable in Unity editor
 		_MainTex ("Texture", 2D) = "white" {}
 		_MatCap ("MatCap", 2D) = "white" {}
 		_Color ("Color", Color) = (1, 1, 1, 1)
 
-		_RockAlbedo ("Rock Albedo", Color) = (1, 1, 1, 1)
-		_RockBaseAlbedo ("Rock Base Albedo", Color) = (1, 1, 1, 1)
+		_RockAlbedo ("Rock Albedo", Color) = (1, 1, 1, 1)				// Colour of the rock 
+		_RockBaseAlbedo ("Rock Base Albedo", Color) = (1, 1, 1, 1)		// Base colour of the rock
 
-		_LavaBaseAlbedo ("Lava Base Albedo", Color) = (1, 1, 1, 1)
-		_LavaAlbedo ("Lava Albedo", Color) = (1, 1, 1, 1)
-		_LavaLightAlbedo ("Lava Light Albedo", Color) = (1, 1, 1, 1)
+		_LavaBaseAlbedo ("Lava Base Albedo", Color) = (1, 1, 1, 1)		// Base colour of the lava
+		_LavaAlbedo ("Lava Albedo", Color) = (1, 1, 1, 1)				// Colour of the lava
+		_LavaLightAlbedo ("Lava Light Albedo", Color) = (1, 1, 1, 1)	// Colour of the light emitted by the lava
 		_LavaMin ("Lava Min", Range(0, 1)) = 0.1
 		_LavaMax ("Lava Max", Range(0, 1)) = 0.5
 		_LavaLightMin ("Lava Light Min", Range(0, 1)) = 0.1
@@ -29,17 +30,19 @@ Shader "TessSphere"
 		Pass
 		{
 			CGPROGRAM
-				#pragma vertex vert
-				#pragma fragment frag
+				#pragma vertex vert					// Define vertex shader
+				#pragma fragment frag				// Define fragment shader
 				#pragma multi_compile_instancing
-
-				#include "UnityCG.cginc"
-				#include "Lighting.cginc"
-				#include "NoiseLib.cginc"
-				#include "Voronoise.cginc"
+				
+				// Include necessary libraries
+				#include "UnityCG.cginc"			// Shader library
+				#include "Lighting.cginc"			// Lighting stuff
+				#include "NoiseLib.cginc"			// Simplex noise
+				#include "Voronoise.cginc"			// Worley noise
 
 				#define OCTAVES 4
-
+				
+				// The struct passed from the vertex shader to the fragment shader
 				struct v2f
 				{
 					float4 vertex 		: SV_POSITION;
@@ -52,7 +55,8 @@ Shader "TessSphere"
 					UNITY_VERTEX_INPUT_INSTANCE_ID
 					UNITY_VERTEX_OUTPUT_STEREO
 				};
-
+				
+				// Define the properties so the shaders can use them
 				sampler2D 	_MainTex;
 				sampler2D	_MatCap;
 				fixed4		_Color;
@@ -66,6 +70,8 @@ Shader "TessSphere"
 				float		_LavaLightMin;
 				float		_LavaLightMax;
 
+
+				// ???
 				float Height (float2 uv)
 				{
 					return fBm_F1_F0(uv, OCTAVES);
@@ -81,12 +87,13 @@ Shader "TessSphere"
 
 					o.height 		= Height(v.texcoord.xy);
 
+					// ???
 					float dispIntensity = 0.02;
 
-					float offset 	= 0.0005;
-					float3 v0		= float3(v.texcoord.xy, 0);
-					float3 v1		= float3(v.texcoord.xy + float2(1, 0) * offset, 0);
-					float3 v2		= float3(v.texcoord.xy + float2(0, 1) * offset, 0);
+					float offset 	= 0.0005;												// How far from the actual position we want the offset positions to be
+					float3 v0		= float3(v.texcoord.xy, 0);								// The actual position we want to calculate the normal for
+					float3 v1		= float3(v.texcoord.xy + float2(1, 0) * offset, 0);		// The first offset position we use to calculate the normal
+					float3 v2		= float3(v.texcoord.xy + float2(0, 1) * offset, 0);		// The second offest position we use to calculate the normal
 					v0.z = Height(v0.xy) * dispIntensity;
 					v1.z = Height(v1.xy) * dispIntensity;
 					v2.z = Height(v2.xy) * dispIntensity;
@@ -123,6 +130,8 @@ Shader "TessSphere"
 					UNITY_SETUP_INSTANCE_ID(i);
 
 					float3 viewDir = normalize(i.worldPos - _WorldSpaceCameraPos);
+
+					//	Fresnel-reflection, calculates the reflection of the surface depending on the view direction
 					float fresnel = pow(1-saturate(dot(i.normal, -viewDir)), 5);
 
 					fixed4 albedo = tex2D(_MainTex, i.texcoord);
